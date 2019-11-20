@@ -46,9 +46,17 @@ def triangulate(Kl, Kr, Twl, Twr, pl, pr, Sl, Sr):
     # vice versa).
     drayl = np.zeros((3, 4))  # Jacobian left ray w.r.t. image points.
     drayr = np.zeros((3, 4))  # Jacobian right ray w.r.t. image points.
-
     # Add code here...
+    Cwl = Twl[:3,:3]
+    pl = np.vstack([pl, 1])
+    rayl = Cwl * inv(Kl) * pl
 
+    Cwr = Twr[:3, :3]
+    pr = np.vstack([pr, 1])
+    rayr = Cwr * inv(Kr) * pr 
+
+    # Calculate the Baseline b 
+    b = Cwr - Cwl
     #------------------
 
     # Compute dml and dmr (partials wrt segment lengths).

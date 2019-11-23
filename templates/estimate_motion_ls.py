@@ -30,7 +30,7 @@ def estimate_motion_ls(Pi, Pf, Si, Sf):
     for i in np.arange(Pi.shape[1]):
         #--- FILL ME IN ---
 
-        # Insert code here.
+        wj = 1 / (det(Si[:,:,i]) + det(Sf[:,:,i]))
 
         #------------------
         w  += wj

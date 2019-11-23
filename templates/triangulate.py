@@ -49,15 +49,34 @@ def triangulate(Kl, Kr, Twl, Twr, pl, pr, Sl, Sr):
     # Add code here...
     Cwl = Twl[:3,:3]
     pl = np.vstack([pl, 1])
-    rayl = Cwl * inv(Kl) * pl
+    rayl = Cwl @ inv(Kl) @ pl
+    rayl /= norm(rayl)
 
     Cwr = Twr[:3, :3]
     pr = np.vstack([pr, 1])
-    rayr = Cwr * inv(Kr) * pr 
+    rayr = Cwr @ inv(Kr) @ pr 
+    rayr /= norm(rayr)
 
     # Calculate the Baseline b 
-    b = Cwr - Cwl
+    Ol = np.reshape(Twl[0:3, 3], (3,1))
+    Or = np.reshape(Twr[0:3, 3], (3,1))
+    b = Or - Ol
     #------------------
+
+    # Calculate ML and MR
+    ml = (b.T @ rayl - (b.T @ rayr)*(rayl.T @ rayr))/(1 - (rayl.T @ rayr) ** 2)
+    mr = (rayl.T @ rayr) * ml - b.T @ rayr
+    
+    # Compute Pl and Pr 
+    Pl = rayl * ml + Ol 
+    Pr = rayr * mr + Or
+
+    # Initialize Jacobian 
+    drayl = np.zeros((3,4))
+    drayr = np.zeros((3,4))
+
+    drayl[:, :2] = ((np.eye(3) - (rayl @ rayl.T))/(norm(Cwl @ inv(Kl) @ pl)) @ Cwl @ inv(Kl)) [: , :2] 
+    drayr[:, 2:] = ((np.eye(3) - (rayr @ rayr.T))/(norm(Cwr @ inv(Kr) @ pr)) @ Cwr @ inv(Kr)) [: , :2] 
 
     # Compute dml and dmr (partials wrt segment lengths).
     u = np.dot(b.T, rayl) - np.dot(b.T, rayr)*np.dot(rayl.T, rayr)
@@ -85,6 +104,13 @@ def triangulate(Kl, Kr, Twl, Twr, pl, pr, Sl, Sr):
     JP = (ml*drayl + rayl*dml + mr*drayr + rayr*dmr)/2
 
     #--- FILL ME IN ---
+
+    covariance = np.block([
+        [Sl,             np.zeros((2,2))],
+        [np.zeros((2,2)),             Sr]
+    ])
+    S = JP @ covariance @ JP.T
+    P = (Pl + Pr) / 2
 
     # 3D point.
 

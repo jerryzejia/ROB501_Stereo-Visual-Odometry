@@ -31,17 +31,24 @@ def estimate_motion_ils(Pi, Pf, Si, Sf, iters):
     C = Tfi[:3, :3]
     I = np.eye(3)
     rpy = rpy_from_dcm(C).reshape(3, 1)
+    P = Pi
+    print(Pi.shape)
 
     # Iterate.
     for j in np.arange(iters):
         A = np.zeros((6, 6))
         B = np.zeros((6, 1))
-
         #--- FILL ME IN ---
-
+        Rx, Ry, Rz = dcm_jacob_rpy(C)
         for i in np.arange(Pi.shape[1]):
-            pass
-
+            pi = np.reshape(Pi[:, i], (3, 1))
+            pf = np.reshape(Pf[:, i], (3, 1))
+            J = np.hstack([Rx @ pi, Ry @ pi, Rz @ pi])
+            S = inv(Si[:, :, i]  + C @ Sf[:, :, i] @ C.T)
+            Qj = pf - C @ pi + J @ rpy
+            J = np.hstack([J, I])
+            A += J.T @ S @ J 
+            B += J.T @ S @ Qj
         #------------------
 
         # Solve system and check stopping criteria if desired...
